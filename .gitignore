@@ -1,0 +1,11 @@
+# runtime data: captured photos, composites, config
+data/
+*.pyc
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.DS_Store
