@@ -50,20 +50,22 @@ def create_app(camera: str = "mock", data_dir: Path | str = "data", **camera_kwa
     app.state.sessions = sessions
     app.state.data_dir = data_dir
 
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.mount("/photos", StaticFiles(directory=sessions.root), name="photos")
 
     # -- pages -------------------------------------------------------------
 
     @app.get("/", include_in_schema=False)
+    @app.get("/index.html", include_in_schema=False)
     async def booth_page():
         return FileResponse(STATIC_DIR / "index.html")
 
     @app.get("/admin", include_in_schema=False)
+    @app.get("/admin.html", include_in_schema=False)
     async def admin_page():
         return FileResponse(STATIC_DIR / "admin.html")
 
     @app.get("/gallery", include_in_schema=False)
+    @app.get("/gallery.html", include_in_schema=False)
     async def gallery_page():
         return FileResponse(STATIC_DIR / "gallery.html")
 
@@ -77,7 +79,7 @@ def create_app(camera: str = "mock", data_dir: Path | str = "data", **camera_kwa
         return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{title}</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%23ff4f7b%27/%3E%3Ccircle cx=%2732%27 cy=%2734%27 r=%2714%27 fill=%27none%27 stroke=%27%23fff%27 stroke-width=%276%27/%3E%3Crect x=%2722%27 y=%2712%27 width=%2720%27 height=%278%27 rx=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E">
-<link rel="stylesheet" href="/static/css/booth.css"></head>
+<link rel="stylesheet" href="/css/booth.css"></head>
 <body class="share"><main>
 <h1>{title}</h1>
 <img src="{src}" alt="Your photo">
@@ -241,5 +243,10 @@ def create_app(camera: str = "mock", data_dir: Path | str = "data", **camera_kwa
         session.printed += config.print_copies
         sessions.save(session)
         return {"ok": True, "job": job, "printed": session.printed}
+
+    # Serve the UI's css/ and js/ from the root, mirroring static hosting
+    # (GitHub Pages) where booth/static is the site root. Mounted last so API
+    # routes and the pages above win.
+    app.mount("/", StaticFiles(directory=STATIC_DIR), name="ui")
 
     return app

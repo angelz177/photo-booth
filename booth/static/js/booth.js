@@ -1,10 +1,11 @@
-import { api, sleep } from './api.js';
+import { selectBackend, sleep } from './backend.js';
 
 const $ = (sel) => document.querySelector(sel);
-const live = $('#live');
+const liveEls = { img: $('#live'), video: $('#live-video') };
 
+let api = null;
 let status = null;
-let config = null;
+let config = {};
 let session = null;
 let busy = false;
 let reviewTimer = null;
@@ -30,18 +31,14 @@ function showError(message) {
   show('error');
 }
 
-// ---------- status polling ----------
+// ---------- status ----------
 
-async function refreshStatus() {
-  try {
-    status = await api.status();
-  } catch (err) {
-    status = { camera: { connected: false, error: 'Booth service unreachable' }, config: config || {} };
-  }
-  config = status.config;
+function applyStatus() {
+  config = status.config || {};
   $('#attract-title').textContent = config.event_name || 'Photo Booth';
   document.body.classList.toggle('mirror', !!config.mirror_preview);
   $('#btn-print').classList.toggle('hidden', !config.print_enabled);
+  $('#demo-banner').classList.toggle('hidden', api.mode !== 'demo');
   const banner = $('#camera-banner');
   if (status.camera.connected) {
     banner.classList.add('hidden');
@@ -51,15 +48,23 @@ async function refreshStatus() {
   }
 }
 
+async function refreshStatus() {
+  try {
+    status = await api.status();
+  } catch (err) {
+    status = { camera: { connected: false, error: 'Booth service unreachable' }, config };
+  }
+  applyStatus();
+}
+
 // ---------- live view ----------
 
-function startLive() {
-  live.src = `/api/live?t=${Date.now()}`;
+async function startLive() {
+  await api.startLive(liveEls);
 }
 
 function stopLive() {
-  // Setting an empty src closes the MJPEG connection so the camera can idle.
-  live.removeAttribute('src');
+  api.stopLive(liveEls);
 }
 
 // ---------- session flow ----------
@@ -103,8 +108,8 @@ async function runSession() {
   $('#live-msg').textContent = 'Get ready!';
   $('#shot-counter').textContent = '';
   show('live');
-  startLive();
   try {
+    await startLive();
     session = await api.createSession();
     const total = session.shots_required;
     await sleep(1500);
@@ -121,8 +126,8 @@ async function runSession() {
       }
     }
     show('processing');
-    stopLive();
     session = await api.finish(session.id);
+    stopLive();
     showReview();
   } catch (err) {
     showError(err.message || String(err));
@@ -137,6 +142,7 @@ function showReview() {
   $('#review-img').src = session.share_url;
   $('#btn-print').disabled = false;
   $('#btn-print').textContent = 'Print';
+  $('#btn-share').textContent = session.qr_url ? 'Get it on your phone' : 'Save photo';
   show('review');
   reviewDeadline = Date.now() + (config.review_timeout_seconds || 45) * 1000;
   clearInterval(reviewTimer);
@@ -178,6 +184,17 @@ async function printPhoto() {
 function sharePhoto() {
   if (!session) return;
   extendReview();
+  if (!session.qr_url) {
+    // Demo mode: nothing to scan, so hand the file to the browser.
+    const a = document.createElement('a');
+    a.href = session.share_url;
+    a.download = `${session.id}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast('Saved to your downloads');
+    return;
+  }
   $('#qr-img').src = `${session.qr_url}?t=${Date.now()}`;
   $('#share-url').textContent = session.share_page_url || '';
   $('#share-modal').classList.remove('hidden');
@@ -216,7 +233,7 @@ async function submitPin() {
   try {
     const result = await api.verifyPin(pin);
     if (result.ok) {
-      window.location.href = '/admin';
+      window.location.href = 'admin.html';
       return;
     }
   } catch (_) { /* fall through */ }
@@ -259,6 +276,9 @@ function bindEvents() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden) requestWakeLock(); });
 }
 
-bindEvents();
-refreshStatus();
-setInterval(refreshStatus, 3000);
+(async () => {
+  bindEvents();
+  ({ api, status } = await selectBackend());
+  applyStatus();
+  setInterval(refreshStatus, 3000);
+})();

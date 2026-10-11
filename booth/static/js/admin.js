@@ -1,8 +1,10 @@
-import { api } from './api.js';
+import { selectBackend } from './backend.js';
 
 const $ = (sel) => document.querySelector(sel);
 const form = $('#config-form');
-let previewOn = true;
+const liveEls = { img: $('#admin-live'), video: $('#admin-live-video') };
+let api = null;
+let previewOn = false;
 
 function fillForm(config) {
   for (const [key, value] of Object.entries(config)) {
@@ -64,9 +66,10 @@ async function testCapture() {
   btn.disabled = true;
   btn.textContent = 'Capturing…';
   try {
+    if (!previewOn) await setPreview(true);
     const session = await api.createSession();
     const shot = await api.capture(session.id);
-    $('#test-img').src = `${shot.url}?t=${Date.now()}`;
+    $('#test-img').src = shot.url.startsWith('blob:') ? shot.url : `${shot.url}?t=${Date.now()}`;
     $('#test-result').classList.remove('hidden');
   } catch (err) {
     alert(`Capture failed: ${err.message}`);
@@ -76,11 +79,15 @@ async function testCapture() {
   }
 }
 
-function togglePreview() {
-  previewOn = !previewOn;
-  const img = $('#admin-live');
-  if (previewOn) img.src = `/api/live?t=${Date.now()}`;
-  else img.removeAttribute('src');
+async function setPreview(on) {
+  previewOn = on;
+  try {
+    if (on) await api.startLive(liveEls);
+    else api.stopLive(liveEls);
+  } catch (err) {
+    previewOn = false;
+    $('#cam-error').textContent = err.message;
+  }
   $('#btn-preview-toggle').textContent = previewOn ? 'Stop preview' : 'Start preview';
 }
 
@@ -97,13 +104,15 @@ form.addEventListener('submit', async (e) => {
 });
 
 $('#btn-test-capture').addEventListener('click', testCapture);
-$('#btn-preview-toggle').addEventListener('click', togglePreview);
+$('#btn-preview-toggle').addEventListener('click', () => setPreview(!previewOn));
 
 (async () => {
+  ({ api } = await selectBackend());
+  $('#demo-note').classList.toggle('hidden', api.mode !== 'demo');
   const config = await api.config();
   fillForm(config);
   await loadPrinters(config.printer_name);
-  $('#admin-live').src = `/api/live?t=${Date.now()}`;
+  await setPreview(true);
   refreshCamera();
   setInterval(refreshCamera, 2000);
 })();

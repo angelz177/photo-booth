@@ -13,6 +13,24 @@ Runs on a Windows PC (Canon EDSDK) or on Linux/macOS (libgphoto2).
 | --- | --- |
 | ![Review screen](docs/screenshots/review.png) | ![Settings](docs/screenshots/admin.png) |
 
+## Try it in your browser
+
+The UI is published to GitHub Pages as a demo:
+**https://angelz177.github.io/photo-booth/**
+
+There is no camera service on Pages, so the page runs in **demo mode**: live
+view and capture use your device's camera, strips are composed in the browser
+with the same layouts the service prints, settings live in your browser, and
+finished photos appear in the gallery on the same device. "Save photo"
+downloads the strip and "Print" opens the browser's print dialog. The real
+booth service replaces all of that with the Canon and the DNP printer; the
+pages are identical.
+
+Deployment is automatic: `.github/workflows/pages.yml` publishes
+`booth/static` on every push that touches it. If the first run fails with a
+Pages error, enable it once under *Settings → Pages → Source: GitHub Actions*
+and re-run the workflow.
+
 ## How it works
 
 ```
