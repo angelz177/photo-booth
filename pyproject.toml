@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "photo-booth"
+version = "0.1.0"
+description = "Event photo booth: camera service + touch-screen booth UI"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "pillow>=10.1",
+    "qrcode>=7.4",
+    "pydantic>=2.5",
+]
+
+[project.optional-dependencies]
+# Canon / Nikon / Sony / Fuji over USB via libgphoto2 (Linux, macOS, Raspberry Pi).
+gphoto2 = ["gphoto2>=2.5"]
+# Any USB webcam, or a camera in UVC "webcam" mode.
+webcam = ["opencv-python-headless>=4.8"]
+# Windows: printing through the Windows spooler (DNP drivers etc.).
+windows = ["pywin32>=306"]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[project.scripts]
+photo-booth = "booth.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["booth*"]
+
+[tool.setuptools.package-data]
+booth = ["static/**/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

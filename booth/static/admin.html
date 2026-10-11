@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Booth Settings</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%23ff4f7b%27/%3E%3Ccircle cx=%2732%27 cy=%2734%27 r=%2714%27 fill=%27none%27 stroke=%27%23fff%27 stroke-width=%276%27/%3E%3Crect x=%2722%27 y=%2712%27 width=%2720%27 height=%278%27 rx=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/booth.css">
+</head>
+<body class="admin">
+<header class="topbar">
+  <h1>Booth Settings</h1>
+  <nav><a href="index.html">Booth</a><a href="gallery.html">Gallery</a></nav>
+</header>
+<main class="admin-grid">
+
+  <p id="demo-note" class="demo-note hidden">Demo mode: no booth service is running, so this page uses your device's camera and keeps settings and photos in this browser only.</p>
+
+  <section class="card">
+    <h2>Camera</h2>
+    <dl id="camera-status" class="kv">
+      <dt>Adapter</dt><dd id="cam-adapter">…</dd>
+      <dt>Model</dt><dd id="cam-model">…</dd>
+      <dt>Status</dt><dd id="cam-connected">…</dd>
+      <dt>Frames</dt><dd id="cam-frames">…</dd>
+    </dl>
+    <p id="cam-error" class="error-text"></p>
+    <div class="preview-box"><img id="admin-live" alt="Live preview"><video id="admin-live-video" class="hidden" autoplay playsinline muted></video></div>
+    <div class="row">
+      <button id="btn-test-capture" class="btn">Test capture</button>
+      <button id="btn-preview-toggle" class="btn ghost">Stop preview</button>
+    </div>
+    <div id="test-result" class="preview-box hidden"><img id="test-img" alt="Test capture"></div>
+  </section>
+
+  <section class="card">
+    <h2>Event</h2>
+    <form id="config-form">
+      <label>Event name <input name="event_name" required></label>
+      <label>Layout
+        <select name="layout">
+          <option value="strip">Photo strip (3 photos, 2x6 doubled on 4x6)</option>
+          <option value="single">Single photo (4x6)</option>
+          <option value="grid">Grid (4 photos, 4x6)</option>
+        </select>
+      </label>
+      <label>Footer text <input name="footer_text" placeholder="Defaults to today's date"></label>
+      <div class="row">
+        <label>Countdown (s) <input name="countdown_seconds" type="number" min="1" max="10"></label>
+        <label>Pause between shots (s) <input name="shot_delay_seconds" type="number" min="0" max="10" step="0.5"></label>
+        <label>Review timeout (s) <input name="review_timeout_seconds" type="number" min="5" max="600"></label>
+      </div>
+      <label class="check"><input name="mirror_preview" type="checkbox"> Mirror the live view (like a mirror)</label>
+
+      <h2>Printing</h2>
+      <label class="check"><input name="print_enabled" type="checkbox"> Show the Print button</label>
+      <div class="row">
+        <label>Printer
+          <select name="printer_name"><option value="">System default</option></select>
+        </label>
+        <label>Copies <input name="print_copies" type="number" min="1" max="5"></label>
+      </div>
+
+      <h2>Sharing & access</h2>
+      <label>Share base URL <input name="share_base_url" placeholder="Leave empty to use this device's address"></label>
+      <label>Admin PIN <input name="admin_pin" inputmode="numeric"></label>
+      <p class="hint">Guests reach settings by holding the top-left corner of the booth screen for two seconds, then entering this PIN.</p>
+
+      <div class="row">
+        <button type="submit" class="btn">Save settings</button>
+        <span id="save-status" class="hint"></span>
+      </div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Branding overlays</h2>
+    <p>To replace the default footer, save a transparent PNG in the data folder as
+      <code>data/overlays/strip.png</code> (600×1800), <code>data/overlays/single.png</code> or
+      <code>data/overlays/grid.png</code> (1200×1800). It is drawn on top of the photos.</p>
+    <p>Photo windows per layout are listed in <code>booth/compose.py</code>.</p>
+  </section>
+
+</main>
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>
