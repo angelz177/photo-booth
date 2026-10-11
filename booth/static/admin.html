@@ -60,6 +60,18 @@
         </label>
         <label>Copies <input name="print_copies" type="number" min="1" max="5"></label>
       </div>
+      <div class="row">
+        <label>Paper size for strips
+          <input name="paper_size_strip" list="paper-sizes" placeholder="Driver default">
+        </label>
+        <label>Paper size for single &amp; grid
+          <input name="paper_size_sheet" list="paper-sizes" placeholder="Driver default">
+        </label>
+      </div>
+      <datalist id="paper-sizes"></datalist>
+      <p class="hint">Names come from the printer driver. Fujifilm ASK-300 and DNP: <code>6x2inchx2 Type1</code>
+        prints one 4x6 and cuts it into two 2x6 strips; use the plain 4x6 size for single and grid. Leave empty
+        to use whatever Printing Preferences has as default.</p>
 
       <h2>Sharing & access</h2>
       <label>Share base URL <input name="share_base_url" placeholder="Leave empty to use this device's address"></label>

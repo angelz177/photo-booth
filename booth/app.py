@@ -20,7 +20,7 @@ from .cameras.base import CameraError
 from .compose import compose, save_jpeg
 from .config import LAYOUT_SHOTS, BoothConfig, ConfigStore
 from .manager import CameraManager
-from .printing import PrintError, list_printers, print_file
+from .printing import PrintError, list_paper_sizes, list_printers, print_file
 from .storage import Session, SessionStore
 
 log = logging.getLogger(__name__)
@@ -115,6 +115,10 @@ def create_app(camera: str = "mock", data_dir: Path | str = "data", **camera_kwa
     @app.get("/api/printers")
     async def printers():
         return {"printers": await asyncio.to_thread(list_printers)}
+
+    @app.get("/api/printers/papers")
+    async def printer_papers(printer: str = ""):
+        return {"printer": printer, "papers": await asyncio.to_thread(list_paper_sizes, printer)}
 
     # -- live view ---------------------------------------------------------
 
@@ -236,8 +240,9 @@ def create_app(camera: str = "mock", data_dir: Path | str = "data", **camera_kwa
         if session.composite is None:
             raise HTTPException(409, "Session has no composite yet")
         path = sessions.dir(session.id) / session.composite
+        paper = config.paper_size_strip if session.layout == "strip" else config.paper_size_sheet
         try:
-            job = await asyncio.to_thread(print_file, path, config.printer_name, config.print_copies)
+            job = await asyncio.to_thread(print_file, path, config.printer_name, config.print_copies, paper)
         except PrintError as exc:
             raise HTTPException(503, str(exc)) from exc
         session.printed += config.print_copies

@@ -46,6 +46,20 @@ async function loadPrinters(selected) {
   select.value = selected || '';
 }
 
+async function loadPaperSizes() {
+  const list = $('#paper-sizes');
+  list.innerHTML = '';
+  if (!api.paperSizes) return;
+  try {
+    const { papers } = await api.paperSizes(form.elements.printer_name.value);
+    for (const name of papers) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      list.appendChild(opt);
+    }
+  } catch (_) { /* no driver info available */ }
+}
+
 async function refreshCamera() {
   try {
     const { camera } = await api.status();
@@ -112,6 +126,8 @@ $('#btn-preview-toggle').addEventListener('click', () => setPreview(!previewOn))
   const config = await api.config();
   fillForm(config);
   await loadPrinters(config.printer_name);
+  await loadPaperSizes();
+  form.elements.printer_name.addEventListener('change', loadPaperSizes);
   await setPreview(true);
   refreshCamera();
   setInterval(refreshCamera, 2000);

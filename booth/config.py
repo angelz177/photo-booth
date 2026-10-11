@@ -26,6 +26,11 @@ class BoothConfig(BaseModel):
     print_enabled: bool = False
     printer_name: str = ""
     print_copies: int = Field(1, ge=1, le=5)
+    # Driver paper-size names applied per job (Windows: DEVMODE form name,
+    # CUPS: -o media=). Empty means the printer's default. The strip default
+    # is the Fujifilm ASK-300 / DNP name for one 4x6 cut into two 2x6 strips.
+    paper_size_strip: str = "6x2inchx2 Type1"
+    paper_size_sheet: str = ""
     admin_pin: str = "1234"
     # When set, QR codes point here (e.g. a public tunnel) instead of the
     # address the booth screen used to reach the service.

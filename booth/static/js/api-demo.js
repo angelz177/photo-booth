@@ -11,7 +11,8 @@ const CONFIG_KEY = 'booth.demo.config';
 const DEFAULTS = {
   event_name: 'My Event', layout: 'strip', countdown_seconds: 3, shot_delay_seconds: 1.5,
   mirror_preview: true, footer_text: '', review_timeout_seconds: 45, print_enabled: true,
-  printer_name: '', print_copies: 1, admin_pin: '1234', share_base_url: '',
+  printer_name: '', print_copies: 1, paper_size_strip: '6x2inchx2 Type1', paper_size_sheet: '',
+  admin_pin: '1234', share_base_url: '',
 };
 
 const sessions = new Map();

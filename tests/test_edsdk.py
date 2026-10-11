@@ -223,3 +223,27 @@ def test_ctypes_api_refuses_non_windows():
     from booth.cameras.edsdk_camera import CtypesEdsApi
     with pytest.raises(CameraError, match="only works on Windows"):
         CtypesEdsApi(None)
+
+
+def test_live_view_is_reenabled_in_place_when_it_drops():
+    api = FakeEdsApi(evf_warmup_calls=0)
+    cam = EdsdkCamera(api=api, evf_start_timeout=2)
+    cam.open()
+    try:
+        assert cam.preview_frame() == EVF
+        enables_before = sum(1 for k, v in api.props.items() if k == kEdsPropID_Evf_OutputDevice)
+        # Simulate the camera's idle timeout: live view output switched itself off.
+        api.props[kEdsPropID_Evf_OutputDevice] = 0
+        original = api.download_evf
+
+        def dropped(camera):
+            if api.props.get(kEdsPropID_Evf_OutputDevice) != 2:
+                return None  # EDS_ERR_OBJECT_NOTREADY until re-enabled
+            return original(camera)
+
+        api.download_evf = dropped
+        assert cam.preview_frame() == EVF
+        assert api.props[kEdsPropID_Evf_OutputDevice] == 2
+        assert enables_before == 1
+    finally:
+        cam.close()

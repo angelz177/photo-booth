@@ -25,6 +25,7 @@ export const api = {
   saveConfig: (config) => request('PUT', 'api/config', config),
   verifyPin: (pin) => request('POST', 'api/admin/verify', { pin }),
   printers: () => request('GET', 'api/printers'),
+  paperSizes: (printer = '') => request('GET', `api/printers/papers?printer=${encodeURIComponent(printer)}`),
   createSession: () => request('POST', 'api/sessions'),
   capture: (id) => request('POST', `api/sessions/${id}/capture`),
   finish: (id) => request('POST', `api/sessions/${id}/finish`),

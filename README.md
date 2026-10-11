@@ -130,10 +130,43 @@ it starts the service and opens the booth full-screen in Edge.
 
 ### Printing on Windows
 
-Install the DNP driver, set the printer's default paper size to 4x6 in its
-Printing Preferences (2x6 if you use the strip cutter), then enable printing
-on the settings page and pick the printer. The booth prints through the
-Windows spooler and fills the page edge to edge.
+Install the printer's Windows driver, then enable printing on the settings
+page and pick the printer. The booth prints through the Windows spooler and
+fills the page edge to edge. The settings page also has two paper-size
+fields, one for strips and one for single/grid sheets, filled from the names
+the driver offers, so the booth picks the right size per job and you never
+touch Printing Preferences between layouts.
+
+## Tested setup: Canon EOS Rebel T7 + Fujifilm ASK-300
+
+**Rebel T7 (EOS 2000D)**, connected with a Mini-USB to USB-A data cable:
+
+| Camera menu | Setting | Why |
+| --- | --- | --- |
+| Live View shooting | Enable | otherwise the viewfinder never starts |
+| Wi-Fi / NFC | Disable | the T7 refuses USB control while Wi-Fi is on |
+| Auto power off | Disable | the service also pings the camera every minute |
+| Image quality | JPEG, M or L Fine | RAW is rejected; Medium downloads faster over USB 2.0 |
+| Lens switch | MF after framing | live-view AF hunts for a second before each shot |
+| Mode dial | M or Av | movie mode blocks remote capture |
+
+If the camera drops live view on its own (idle timeout, or right after a
+shot), the service re-enables it in place; you will see at most a short
+pause in the viewfinder.
+
+**Fujifilm ASK-300** (a DNP-built dye-sub), with 4x6 media:
+
+* Install the 64-bit Windows 10/11 driver from Fujifilm. The strip cut needs
+  recent printer firmware and the Windows 10 driver, not the XP/Vista one.
+* The printer always consumes a full 4x6. For strips the booth prints one
+  4x6 sheet carrying two identical 2x6 strips and asks the driver for the
+  paper size **6x2inchx2 Type1**, which makes the printer cut it in two.
+  That name is the default in *Paper size for strips*; pick it from the
+  list if your driver spells it differently.
+* For the single and grid layouts set *Paper size for single & grid* to the
+  plain 4x6 entry (empty uses the driver's default).
+* Print one strip and one 4x6 before the first event to confirm the cut and
+  the colours.
 
 ## Canon DSLR on Linux or macOS
 

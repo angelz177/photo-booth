@@ -275,23 +275,33 @@ class EdsdkCamera(Camera):
 
     # -- jobs (worker thread) ----------------------------------------------
 
-    def _job_preview(self) -> bytes:
+    def _start_evf(self) -> bytes:
+        """(Re)enable live view output to the PC and wait for the first frame."""
         api, camera = self._api, self._camera
+        api.set_uint32(camera, kEdsPropID_Evf_OutputDevice, kEdsEvfOutputDevice_PC)
+        self._evf_on = True
+        deadline = time.monotonic() + self.evf_start_timeout
+        while time.monotonic() < deadline:
+            frame = api.download_evf(camera)
+            if frame:
+                return frame
+            self._pump()
+            time.sleep(0.05)
+        self._evf_on = False
+        raise CameraError(
+            "Live view did not start. On the camera enable 'Live View shooting' and use a still-photo mode."
+        )
+
+    def _job_preview(self) -> bytes:
         if not self._evf_on:
-            api.set_uint32(camera, kEdsPropID_Evf_OutputDevice, kEdsEvfOutputDevice_PC)
-            self._evf_on = True
-            deadline = time.monotonic() + self.evf_start_timeout
-            while time.monotonic() < deadline:
-                frame = api.download_evf(camera)
-                if frame:
-                    return frame
-                self._pump()
-                time.sleep(0.05)
-            raise CameraError("Live view did not start. Is the camera in a still-photo mode?")
-        frame = api.download_evf(camera)
-        if frame is None:
-            raise CameraError("Live view stopped (camera busy or switched off)")
-        return frame
+            return self._start_evf()
+        frame = self._api.download_evf(self._camera)
+        if frame:
+            return frame
+        # DSLRs drop live view after their own idle timeout (and right after a
+        # shot). Re-enable it in place instead of reporting a disconnect.
+        log.info("EDSDK: live view frame empty, re-enabling live view")
+        return self._start_evf()
 
     def _job_capture(self) -> bytes:
         api, camera = self._api, self._camera

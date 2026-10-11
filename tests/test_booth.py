@@ -199,3 +199,40 @@ def test_compose_overlay_is_applied(tmp_path, photos):
     assert share.getpixel((300, 1750)) == (255, 0, 0)
     # the photo area above the band is untouched (slot 1 top-left pixel is photo colour)
     assert share.getpixel((25, 25)) != (255, 0, 0)
+
+
+def test_papers_endpoint(client):
+    r = client.get("/api/printers/papers", params={"printer": "ASK300"})
+    assert r.status_code == 200
+    assert r.json()["printer"] == "ASK300"
+    assert isinstance(r.json()["papers"], list)
+
+
+def test_print_uses_paper_size_for_layout(client, monkeypatch):
+    import booth.app as app_module
+
+    calls = []
+
+    def fake_print(path, printer_name, copies, paper_size):
+        calls.append((path.name, printer_name, copies, paper_size))
+        return "ok"
+
+    monkeypatch.setattr(app_module, "print_file", fake_print)
+    config = client.get("/api/config").json()
+    config.update(print_enabled=True, printer_name="ASK300", paper_size_strip="6x2inchx2 Type1", paper_size_sheet="6x4inch")
+    client.put("/api/config", json=config)
+
+    sid = client.post("/api/sessions").json()["id"]
+    for _ in range(3):
+        client.post(f"/api/sessions/{sid}/capture")
+    client.post(f"/api/sessions/{sid}/finish")
+    assert client.post(f"/api/sessions/{sid}/print").json()["printed"] == 1
+    assert calls[-1] == ("composite.jpg", "ASK300", 1, "6x2inchx2 Type1")
+
+    config["layout"] = "single"
+    client.put("/api/config", json=config)
+    sid = client.post("/api/sessions").json()["id"]
+    client.post(f"/api/sessions/{sid}/capture")
+    client.post(f"/api/sessions/{sid}/finish")
+    client.post(f"/api/sessions/{sid}/print")
+    assert calls[-1][3] == "6x4inch"
