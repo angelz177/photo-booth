@@ -27,9 +27,15 @@ booth service replaces all of that with the Canon and the DNP printer; the
 pages are identical.
 
 Deployment is automatic: `.github/workflows/pages.yml` publishes
-`booth/static` on every push that touches it. If the first run fails with a
-Pages error, enable it once under *Settings → Pages → Source: GitHub Actions*
-and re-run the workflow.
+`booth/static` on every push that touches it. One-time setup, because a
+workflow is not allowed to create the Pages site itself:
+
+1. Repo *Settings → Pages → Build and deployment → Source*: choose
+   **GitHub Actions**.
+2. Pages deploys from `main` by default. To publish a feature branch as well,
+   go to *Settings → Environments → github-pages → Deployment branches* and
+   add that branch.
+3. Re-run the failed workflow from the *Actions* tab, or push again.
 
 ## How it works
 
