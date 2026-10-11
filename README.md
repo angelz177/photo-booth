@@ -1,9 +1,9 @@
 # Photo Booth
 
 Self-hosted photo booth for weddings, quinceañeras and parties. A Canon DSLR
-(or any libgphoto2-supported camera) streams live view to a full-screen touch
-UI; guests tap, pose through a countdown, and get a printed strip plus a QR
-code to download their photo.
+streams live view to a full-screen touch UI; guests tap, pose through a
+countdown, and get a printed strip plus a QR code to download their photo.
+Runs on a Windows PC (Canon EDSDK) or on Linux/macOS (libgphoto2).
 
 | Attract | Live view + countdown |
 | --- | --- |
@@ -25,10 +25,11 @@ code to download their photo.
                               └──────────────────────────────┘
 ```
 
-* **`booth/cameras/`**: pluggable camera adapters. `gphoto2` (Canon, Nikon,
-  Sony, Fuji over USB), `webcam` (any UVC webcam via OpenCV) and `mock`
-  (synthetic frames, no hardware). Adding Canon EDSDK or Sony's SDK later means
-  implementing the same four-method interface in `base.py`.
+* **`booth/cameras/`**: pluggable camera adapters. `edsdk` (Canon on Windows
+  via Canon's official SDK), `gphoto2` (Canon, Nikon, Sony, Fuji over USB on
+  Linux/macOS), `webcam` (any UVC webcam via OpenCV) and `mock` (synthetic
+  frames, no hardware). Every adapter implements the same four-method
+  interface in `base.py`.
 * **`booth/manager.py`**: owns the camera. Pulls live-view frames on a
   background thread only while someone is watching, serializes capture against
   preview, and reconnects automatically if the camera drops.
@@ -51,11 +52,69 @@ Open http://localhost:8000/ for the booth, `/admin` for settings and
 for two seconds and enter the PIN (default `1234`) to reach settings from the
 kiosk.
 
-## Canon DSLR setup
+## Canon DSLR on a Windows PC (recommended booth setup)
+
+On Windows the booth uses Canon's official EOS Digital SDK (EDSDK). It
+supports every EOS DSLR and mirrorless body that works with EOS Utility.
+
+### 1. Get the EDSDK from Canon
+
+Canon does not allow the SDK to be redistributed, so it is not in this repo.
+Register (free) with the Canon Developer Community for your region and
+request the **EDSDK for Windows**. Approval typically takes a few business
+days, so start this first.
+
+* Americas: https://developercommunity.usa.canon.com/
+* Europe: https://developers.canon-europe.com/
+* Asia: https://asia.canon/en/campaign/developerresources
+
+Unzip the download and copy everything inside `EDSDK_64\Dll\` (EDSDK.dll,
+EdsImage.dll and the other DLLs) into a folder named `EDSDK` next to this
+README. That folder is git-ignored.
+
+### 2. Install the booth
+
+Install Python 3.11 or newer from python.org (tick "Add python.exe to PATH"),
+then in a terminal inside the project folder:
+
+```bat
+python -m venv .venv
+.venv\Scripts\activate
+pip install -e ".[windows]"
+```
+
+### 3. Prepare the camera
+
+* Image quality: **JPEG** (Large/Fine), not RAW.
+* Frame the booth, focus, then switch the lens to **MF** so every shot fires
+  instantly without hunting.
+* Shooting mode M or Av with your flash settings dialled in.
+* Auto power off: **disable**. Wi-Fi: **disable** (it blocks USB control on
+  many bodies).
+* Close EOS Utility, EOS Webcam Utility and anything else that talks to the
+  camera. Only one program can hold it.
+
+### 4. Run
+
+```bat
+python -m booth --camera edsdk
+```
+
+Open http://localhost:8000/admin, confirm the model name and live preview, and
+press **Test capture**. For events, double-click `scripts\start-booth.bat`:
+it starts the service and opens the booth full-screen in Edge.
+
+### Printing on Windows
+
+Install the DNP driver, set the printer's default paper size to 4x6 in its
+Printing Preferences (2x6 if you use the strip cutter), then enable printing
+on the settings page and pick the printer. The booth prints through the
+Windows spooler and fills the page edge to edge.
+
+## Canon DSLR on Linux or macOS
 
 The booth talks to the camera with libgphoto2 over USB. This works on Linux
-(including Raspberry Pi) and macOS. Windows is not supported by libgphoto2;
-plan for a Canon EDSDK adapter there.
+(including Raspberry Pi) and macOS.
 
 ### 1. Install
 
@@ -110,9 +169,10 @@ CLI package) are handy to verify the camera outside the app.
 
 ## Deployment shapes
 
-* **One box.** A Linux or macOS mini PC with a touchscreen runs the service
-  and shows `http://localhost:8000/` in a kiosk browser
-  (`chromium --kiosk http://localhost:8000/`).
+* **One box.** A Windows, Linux or macOS PC with a touchscreen runs the
+  service and shows `http://localhost:8000/` in a kiosk browser
+  (`scripts\start-booth.bat` on Windows, or
+  `chromium --kiosk http://localhost:8000/`).
 * **iPad front end + booth box.** A Raspberry Pi 5 (or any small PC) runs the
   service and the printer. The iPad joins the Pi's Wi-Fi hotspot and opens the
   booth URL in Safari (Add to Home Screen gives a full-screen app). Live view
@@ -124,9 +184,10 @@ tunnel or reverse proxy that forwards to the service.
 
 ## Printing
 
-Printing goes through CUPS (`lp`). Enable it in settings and pick the printer.
-DNP dye-sub printers (DS620, DS820, RX1HS, QW410) work on macOS with DNP's
-driver and on Linux with Gutenprint. The print file is always 1200x1800
+Enable printing in settings and pick the printer. On Windows the booth prints
+through the Windows spooler; on Linux and macOS through CUPS (`lp`). DNP
+dye-sub printers (DS620, DS820, RX1HS, QW410) work on all three with the
+vendor driver (Gutenprint on Linux). The print file is always 1200x1800
 (4x6 at 300 dpi); the strip layout puts two identical 2x6 strips on one sheet
 for the printer's cutter.
 
@@ -172,6 +233,8 @@ pip install -e ".[dev]"
 pytest
 python -m booth --camera mock          # synthetic camera
 python -m booth --camera webcam        # any UVC webcam (pip install -e ".[webcam]")
+python -m booth --camera edsdk         # Canon on Windows (see above)
+python -m booth --camera gphoto2       # Canon/Nikon/Sony on Linux or macOS
 ```
 
 Data (captures, composites, config) is written to `./data`, which is
@@ -179,7 +242,6 @@ git-ignored. Use `--data /path` or `BOOTH_DATA` to move it.
 
 ## Roadmap
 
-* Canon EDSDK adapter for Windows.
 * GIF / boomerang mode, video messages.
 * SMS and email delivery, cloud gallery sync.
 * Template designer and multi-event management.

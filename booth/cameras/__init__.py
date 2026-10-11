@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .base import Camera, CameraError
 
-ADAPTERS = ("mock", "webcam", "gphoto2")
+ADAPTERS = ("mock", "webcam", "gphoto2", "edsdk")
 
 
 def make_camera(name: str, **kwargs) -> Camera:
@@ -20,6 +20,10 @@ def make_camera(name: str, **kwargs) -> Camera:
         from .gphoto2_camera import GPhoto2Camera
 
         return GPhoto2Camera()
+    if name == "edsdk":
+        from .edsdk_camera import EdsdkCamera
+
+        return EdsdkCamera(dll_dir=kwargs.get("edsdk_dir"))
     raise ValueError(f"Unknown camera adapter '{name}'. Choose one of: {', '.join(ADAPTERS)}")
 
 

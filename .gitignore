@@ -9,3 +9,8 @@ venv/
 build/
 dist/
 .DS_Store
+
+# Canon EDSDK (not redistributable): keep it out of the repo
+EDSDK/
+EDSDK_64/
+*.dll

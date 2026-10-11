@@ -18,6 +18,11 @@ def main() -> None:
         help="camera adapter (default: $BOOTH_CAMERA or 'mock')",
     )
     parser.add_argument("--webcam-index", type=int, default=0, help="device index for --camera webcam")
+    parser.add_argument(
+        "--edsdk-dir",
+        default=os.environ.get("BOOTH_EDSDK_DIR", "EDSDK"),
+        help="folder containing Canon's EDSDK.dll for --camera edsdk (Windows)",
+    )
     parser.add_argument("--data", default=os.environ.get("BOOTH_DATA", "data"), help="data directory")
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=int(os.environ.get("BOOTH_PORT", "8000")))
@@ -30,7 +35,7 @@ def main() -> None:
 
     from .app import create_app
 
-    app = create_app(camera=args.camera, data_dir=args.data, webcam_index=args.webcam_index)
+    app = create_app(camera=args.camera, data_dir=args.data, webcam_index=args.webcam_index, edsdk_dir=args.edsdk_dir)
     print(f"Photo booth ({args.camera} camera) -> http://localhost:{args.port}/   admin: /admin   gallery: /gallery")
     uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level)
 
